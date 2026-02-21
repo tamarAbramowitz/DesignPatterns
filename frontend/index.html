@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-Memory Database System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .tabs { display: flex; background: #f5f5f5; border-bottom: 2px solid #ddd; }
+        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; background: #f5f5f5; border: none; font-size: 16px; transition: all 0.3s; }
+        .tab:hover { background: #e0e0e0; }
+        .tab.active { background: white; border-bottom: 3px solid #667eea; font-weight: bold; }
+        .content { padding: 30px; display: none; }
+        .content.active { display: block; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; }
+        .btn { padding: 12px 30px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; transition: all 0.3s; margin-right: 10px; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #667eea; color: white; }
+        .alert { padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .column-item { display: flex; gap: 10px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ In-Memory Database System</h1>
+            <p>Design Patterns Project</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('create')">➕ Create Table</button>
+            <button class="tab" onclick="showTab('insert')">📝 Insert Row</button>
+            <button class="tab" onclick="showTab('query')">🔍 Query</button>
+            <button class="tab" onclick="showTab('view')">📊 View Tables</button>
+            <button class="tab" onclick="showTab('clone')">📋 Clone Table</button>
+        </div>
+
+        <div id="message"></div>
+
+        <div id="create" class="content active">
+            <h2>Create New Table</h2>
+            <div class="form-group">
+                <label>Table Name:</label>
+                <input type="text" id="tableName" placeholder="Enter table name">
+            </div>
+            <div class="form-group">
+                <label>Column Name:</label>
+                <input type="text" id="colName" placeholder="Column name">
+            </div>
+            <div class="form-group">
+                <label>Column Type:</label>
+                <select id="colType">
+                    <option value="String">String</option>
+                    <option value="Integer">Integer</option>
+                    <option value="Boolean">Boolean</option>
+                </select>
+            </div>
+            <button class="btn btn-success" onclick="addColumn()">Add Column</button>
+            <div id="columnsList"></div>
+            <button class="btn btn-primary" onclick="createTable()">Create Table</button>
+        </div>
+
+        <div id="insert" class="content">
+            <h2>Insert Row</h2>
+            <div class="form-group">
+                <label>Select Table:</label>
+                <select id="insertTable" onchange="showInsertFields()">
+                    <option value="">-- Select Table --</option>
+                </select>
+            </div>
+            <div id="insertFields"></div>
+            <button class="btn btn-primary" onclick="insertRow()">Insert Row</button>
+        </div>
+
+        <div id="query" class="content">
+            <h2>Query Data</h2>
+            <div class="form-group">
+                <label>Select Table:</label>
+                <select id="queryTable">
+                    <option value="">-- Select Table --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Column:</label>
+                <select id="queryColumn">
+                    <option value="">-- All Rows --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Operator:</label>
+                <select id="queryOp">
+                    <option value="Equal">Equal (=)</option>
+                    <option value="NotEqual">Not Equal (!=)</option>
+                    <option value="Greater">Greater Than (>)</option>
+                    <option value="Less">Less Than (<)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Value:</label>
+                <input type="text" id="queryValue" placeholder="Enter value">
+            </div>
+            <button class="btn btn-primary" onclick="queryData()">Query</button>
+            <div id="queryResults"></div>
+        </div>
+
+        <div id="view" class="content">
+            <h2>All Tables</h2>
+            <div id="allTables"></div>
+        </div>
+
+        <div id="clone" class="content">
+            <h2>Clone Table</h2>
+            <div class="form-group">
+                <label>Select Table:</label>
+                <select id="cloneTable">
+                    <option value="">-- Select Table --</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="cloneTable()">Clone Table</button>
+        </div>
+    </div>
+
+    <script>
+        let tables = [];
+        let tempColumns = [];
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            updateSelects();
+        }
+
+        function showMessage(msg, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.innerHTML = `<div class="alert alert-${type}" style="margin: 20px;">${msg}</div>`;
+            setTimeout(() => msgDiv.innerHTML = '', 3000);
+        }
+
+        function addColumn() {
+            const name = document.getElementById('colName').value;
+            const type = document.getElementById('colType').value;
+            if (!name) return showMessage('Enter column name', 'error');
+            
+            tempColumns.push({name, type});
+            document.getElementById('colName').value = '';
+            updateColumnsList();
+        }
+
+        function updateColumnsList() {
+            const list = document.getElementById('columnsList');
+            list.innerHTML = '<h3>Columns:</h3>' + tempColumns.map((c, i) => 
+                `<div class="column-item">${c.name} (${c.type}) <button class="btn btn-danger" onclick="removeColumn(${i})">Remove</button></div>`
+            ).join('');
+        }
+
+        function removeColumn(index) {
+            tempColumns.splice(index, 1);
+            updateColumnsList();
+        }
+
+        function createTable() {
+            const name = document.getElementById('tableName').value;
+            if (!name || tempColumns.length === 0) return showMessage('Enter table name and add columns', 'error');
+            
+            tables.push({name, columns: [...tempColumns], rows: []});
+            showMessage(`Table '${name}' created!`, 'success');
+            document.getElementById('tableName').value = '';
+            tempColumns = [];
+            updateColumnsList();
+            updateSelects();
+        }
+
+        function updateSelects() {
+            const selects = ['insertTable', 'queryTable', 'cloneTable'];
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                select.innerHTML = '<option value="">-- Select Table --</option>' + 
+                    tables.map((t, i) => `<option value="${i}">${t.name}</option>`).join('');
+            });
+            showAllTables();
+        }
+
+        function showInsertFields() {
+            const tableIndex = document.getElementById('insertTable').value;
+            if (!tableIndex) return;
+            const table = tables[tableIndex];
+            document.getElementById('insertFields').innerHTML = table.columns.map(c => 
+                `<div class="form-group"><label>${c.name} (${c.type}):</label><input type="text" id="field_${c.name}"></div>`
+            ).join('');
+        }
+
+        function insertRow() {
+            const tableIndex = document.getElementById('insertTable').value;
+            if (!tableIndex) return showMessage('Select a table', 'error');
+            
+            const table = tables[tableIndex];
+            const row = {};
+            table.columns.forEach(c => {
+                row[c.name] = document.getElementById(`field_${c.name}`).value;
+            });
+            table.rows.push(row);
+            showMessage('Row inserted!', 'success');
+            showInsertFields();
+        }
+
+        function queryData() {
+            const tableIndex = document.getElementById('queryTable').value;
+            if (!tableIndex) return showMessage('Select a table', 'error');
+            
+            const table = tables[tableIndex];
+            const column = document.getElementById('queryColumn').value;
+            const op = document.getElementById('queryOp').value;
+            const value = document.getElementById('queryValue').value;
+            
+            let results = table.rows;
+            if (column && value) {
+                results = results.filter(row => {
+                    const rowVal = row[column];
+                    switch(op) {
+                        case 'Equal': return rowVal == value;
+                        case 'NotEqual': return rowVal != value;
+                        case 'Greater': return Number(rowVal) > Number(value);
+                        case 'Less': return Number(rowVal) < Number(value);
+                    }
+                });
+            }
+            
+            const html = `<h3>Results (${results.length} rows)</h3><table><thead><tr>` +
+                table.columns.map(c => `<th>${c.name}</th>`).join('') + '</tr></thead><tbody>' +
+                results.map(r => '<tr>' + table.columns.map(c => `<td>${r[c.name]}</td>`).join('') + '</tr>').join('') +
+                '</tbody></table>';
+            document.getElementById('queryResults').innerHTML = html;
+        }
+
+        function showAllTables() {
+            const div = document.getElementById('allTables');
+            if (tables.length === 0) {
+                div.innerHTML = '<p>No tables created yet.</p>';
+                return;
+            }
+            div.innerHTML = tables.map((t, ti) => 
+                `<h3>${t.name} (${t.rows.length} rows)</h3><table><thead><tr>` +
+                t.columns.map(c => `<th>${c.name}</th>`).join('') + '<th>Actions</th></tr></thead><tbody>' +
+                t.rows.map((r, ri) => '<tr>' + t.columns.map(c => `<td>${r[c.name]}</td>`).join('') + 
+                    `<td><button class="btn btn-danger" onclick="deleteRow(${ti}, ${ri})">Delete</button></td></tr>`).join('') +
+                '</tbody></table>'
+            ).join('');
+        }
+
+        function deleteRow(tableIndex, rowIndex) {
+            tables[tableIndex].rows.splice(rowIndex, 1);
+            showMessage('Row deleted!', 'success');
+            showAllTables();
+        }
+
+        function cloneTable() {
+            const tableIndex = document.getElementById('cloneTable').value;
+            if (!tableIndex) return showMessage('Select a table', 'error');
+            
+            const original = tables[tableIndex];
+            const cloned = {
+                name: original.name + '_Clone',
+                columns: [...original.columns],
+                rows: original.rows.map(r => ({...r}))
+            };
+            tables.push(cloned);
+            showMessage(`Table '${original.name}' cloned!`, 'success');
+            updateSelects();
+        }
+    </script>
+</body>
+</html>

@@ -1,3 +1,6 @@
+using System;
+using System.Linq;
+
 public class Insert : Operation
 {
     private string _tableName;
@@ -26,8 +29,12 @@ public class Insert : Operation
 
         for (int i = 0; i < _row.Values.Count; i++)
         {
-            if (_row.Values[object][i].GetType() != table.Schema.Columns[i].Type)
+            var value = _row.Values.ElementAt(i).Value; // מקבל את הערך לפי אינדקס
+            var expectedType = table.Schema.Columns[i].Type;
+
+            if (!expectedType.Equals(value.GetType()))
             {
+                
                 throw new Exception($"Value type does not match column type for column {table.Schema.Columns[i].Name}");
             }
         }

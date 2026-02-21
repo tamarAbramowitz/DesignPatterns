@@ -1,15 +1,16 @@
 using System;
 
 
+
 public class Query : Operation
 {
     private string _tableName;
     private string _columnName;
     private DataType _value;
-    private ComparisonOperator _operator;
+    private ComparisonOperators _operator;
 
 
-    public Query(Database database, string tableName, string columnName, DataType value, ComparisonOperator op) : base(database)
+    public Query(Database database, string tableName, string columnName, DataType value, ComparisonOperators op) : base(database)
     {
         _tableName = tableName;
         _columnName = columnName;
@@ -32,7 +33,7 @@ public class Query : Operation
         {
             throw new Exception("Column does not exist");
         }
-        if(column.Type != _value.GetType())
+        if(!column.Type.Equals( _value.GetType()))
         {
             throw new Exception("Value type does not match column type");
         }
@@ -89,7 +90,7 @@ public class Query : Operation
 
         foreach (var row in table.Rows)
         {
-            var cellValue = row.Values[columnIndex];
+            var cellValue = row.Values.ElementAt(columnIndex).Value;
 
             if (!(cellValue is IComparable))
                 continue; 
@@ -97,12 +98,12 @@ public class Query : Operation
 
             bool conditionMet = _operator switch
             {
-                ComparisonOperator.Equal => cmp == 0,
-                ComparisonOperator.NotEqual => cmp != 0,
-                ComparisonOperator.Greater => cmp > 0,
-                ComparisonOperator.Less => cmp < 0,
-                ComparisonOperator.GreaterOrEqual => cmp >= 0,
-                ComparisonOperator.LessOrEqual => cmp <= 0,
+                ComparisonOperators.Equal => cmp == 0,
+                ComparisonOperators.NotEqual => cmp != 0,
+                ComparisonOperators.Greater => cmp > 0,
+                ComparisonOperators.Less => cmp < 0,
+                ComparisonOperators.GreaterOrEqual => cmp >= 0,
+                ComparisonOperators.LessOrEqual => cmp <= 0,
                 _ => false
             };
 

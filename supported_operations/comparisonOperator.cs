@@ -1,4 +1,4 @@
-public enum ComparisonOperator
+public enum ComparisonOperators
 {
     Equal,
     NotEqual,

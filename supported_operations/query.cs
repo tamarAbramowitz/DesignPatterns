@@ -32,7 +32,7 @@ public class Query : Operation
         {
             throw new Exception("Column does not exist");
         }
-        if(column.Type != _value.GetType())
+        if(column.Type != _value)
         {
             throw new Exception("Value type does not match column type");
         }
@@ -89,7 +89,7 @@ public class Query : Operation
 
         foreach (var row in table.Rows)
         {
-            var cellValue = row.Values[columnIndex];
+            var cellValue = row.GetValue(_columnName);
 
             if (!(cellValue is IComparable))
                 continue; 
@@ -99,8 +99,8 @@ public class Query : Operation
             {
                 ComparisonOperator.Equal => cmp == 0,
                 ComparisonOperator.NotEqual => cmp != 0,
-                ComparisonOperator.Greater => cmp > 0,
-                ComparisonOperator.Less => cmp < 0,
+                ComparisonOperator.GreaterThan => cmp > 0,
+                ComparisonOperator.LessThan => cmp < 0,
                 ComparisonOperator.GreaterOrEqual => cmp >= 0,
                 ComparisonOperator.LessOrEqual => cmp <= 0,
                 _ => false

@@ -24,11 +24,12 @@ public class Insert : Operation
             throw new Exception("Number of values does not match number of columns");
         }
 
-        for (int i = 0; i < _row.Values.Count; i++)
+        foreach (var kvp in _row.Values)
         {
-            if (_row.Values[object][i].GetType() != table.Schema.Columns[i].Type)
+            var column = table.Schema.Columns.Find(c => c.Name == kvp.Key);
+            if (column == null)
             {
-                throw new Exception($"Value type does not match column type for column {table.Schema.Columns[i].Name}");
+                throw new Exception($"Column {kvp.Key} does not exist in table");
             }
         }
         

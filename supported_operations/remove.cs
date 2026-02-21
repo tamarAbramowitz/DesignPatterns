@@ -13,7 +13,7 @@ public class Remove : Operation
     {
         var tables = _database.GetAllTables();
 
-        foreach (var tableName in _tableNames)
+        foreach (var tableName in _tablesNames)
         {
             if (!tables.ContainsKey(tableName))
             {

@@ -1,13 +1,11 @@
 using System;
 
-
 public class Query : Operation
 {
     private string _tableName;
     private string _columnName;
     private DataType _value;
     private ComparisonOperator _operator;
-
 
     public Query(Database database, string tableName, string columnName, DataType value, ComparisonOperator op) : base(database)
     {
@@ -36,55 +34,11 @@ public class Query : Operation
         {
             throw new Exception("Value type does not match column type");
         }
-        
     }
-
-    // protected override List<Row> Execution()
-    // {
-    //     Table table = _database.GetAllTables()[_tableName];
-    //     var columnIndex = table.Schema.Columns.FindIndex(c => c.Name == _columnName);
-    //     List<Row> result = new List<Row>();
-
-    //     foreach (var row in table.Rows)
-    //     {
-    //         var cellValue = row.Values[columnIndex];
-    //         bool conditionMet = false;
-
-    //         switch (_operator)
-    //         {
-    //             case "==":
-    //                 conditionMet = cellValue.Equals(_value);
-    //                 break;
-    //             case "!=":
-    //                 conditionMet = !cellValue.Equals(_value);
-    //                 break;
-    //             case ">":
-    //                 conditionMet = Convert.ToDouble(cellValue) > Convert.ToDouble(_value);
-    //                 break;
-    //             case "<":
-    //                 conditionMet = Convert.ToDouble(cellValue) < Convert.ToDouble(_value);
-    //                 break;
-    //             case ">=":
-    //                 conditionMet = Convert.ToDouble(cellValue) >= Convert.ToDouble(_value);
-    //                 break;
-    //             case "<=":
-    //                 conditionMet = Convert.ToDouble(cellValue) <= Convert.ToDouble(_value);
-    //                 break;
-    //         }
-
-    //         if (conditionMet)
-    //         {
-    //             result.Add(row);
-    //         }
-    //     }
-
-    //     return result;
-    // }
 
     protected override List<Row> Execution()
     {
         Table table = _database.GetAllTables()[_tableName];
-        int columnIndex = table.Schema.Columns.FindIndex(c => c.Name == _columnName);
         List<Row> result = new List<Row>();
 
         foreach (var row in table.Rows)
@@ -109,11 +63,7 @@ public class Query : Operation
             if (conditionMet)
                 result.Add(row);
         }
-        // DataChangePublisher publisher = new DataChangePublisher();
-        // publisher.PublishChange($"Queried table: {_tableName} with column: {_columnName}, operator: {_operator}, value: {_value}");
-
 
         return result;
     }
-
 }

@@ -5,6 +5,26 @@ class Program
 {
     static void Main(string[] args)
     {
+        Console.WriteLine("╔════════════════════════════════════════╗");
+        Console.WriteLine("║   In-Memory Database System            ║");
+        Console.WriteLine("╚════════════════════════════════════════╝");
+        Console.WriteLine();
+        Console.WriteLine("Choose mode:");
+        Console.WriteLine("1. Interactive User Interface");
+        Console.WriteLine("2. Run Automated Tests");
+        Console.Write("\nYour choice: ");
+        
+        string choice = Console.ReadLine() ?? "";
+        Console.Clear();
+
+        if (choice == "1")
+        {
+            var ui = new UserInterface();
+            ui.Run();
+            return;
+        }
+
+        // Automated Tests
         Console.WriteLine("=== Testing In-Memory Data Engine ===");
         Console.WriteLine();
 
@@ -73,7 +93,7 @@ class Program
         var ageCondition = new ComparisonExpression("Age", ComparisonOperator.GreaterThan, 18);
         var usersTable = database.GetTable("Users");
         var result1 = usersTable.Rows.FindAll(r => ageCondition.Interpret(r));
-        Console.WriteLine($"✓ Simple condition (Age > 18): Found {result1.Count} rows");
+        Console.WriteLine($"✓ Simple condition (Age > 18): Found {result1.Count} row(s)");
         foreach (var row in result1)
         {
             Console.WriteLine($"  - {row.GetValue("Name")}, Age: {row.GetValue("Age")}");
@@ -83,12 +103,12 @@ class Program
         var activeCondition = new ComparisonExpression("IsActive", ComparisonOperator.Equal, true);
         var andCondition = new AndExpression(ageCondition, activeCondition);
         var result2 = usersTable.Rows.FindAll(r => andCondition.Interpret(r));
-        Console.WriteLine($"✓ Combined AND (Age > 18 AND IsActive): Found {result2.Count} rows");
+        Console.WriteLine($"✓ Combined AND (Age > 18 AND IsActive): Found {result2.Count} row(s)");
 
         var youngCondition = new ComparisonExpression("Age", ComparisonOperator.LessThan, 20);
         var orCondition = new OrExpression(youngCondition, nameCondition);
         var result3 = usersTable.Rows.FindAll(r => orCondition.Interpret(r));
-        Console.WriteLine($"✓ Combined OR (Age < 20 OR Name = 'Sara'): Found {result3.Count} rows");
+        Console.WriteLine($"✓ Combined OR (Age < 20 OR Name = 'Sara'): Found {result3.Count} row(s)");
         Console.WriteLine();
 
         // Test Requirement 4: DB Client Interface (Facade Pattern)
@@ -119,10 +139,10 @@ class Program
         Console.WriteLine("--- Requirement 5: Table Cloning (Prototype Pattern) ---");
         
         var originalTable = database.GetTable("Users");
-        Console.WriteLine($"✓ Original table has {originalTable.Rows.Count} rows");
+        Console.WriteLine($"✓ Original table has {originalTable.Rows.Count} row(s)");
         
         var clonedTable = TableCloner.Clone(originalTable);
-        Console.WriteLine($"✓ Table cloned - has {clonedTable.Rows.Count} rows");
+        Console.WriteLine($"✓ Table cloned - has {clonedTable.Rows.Count} row(s)");
         
         var newRow = new Row();
         newRow.SetValue("Id", 99);
@@ -132,7 +152,7 @@ class Program
         clonedTable.AddRow(newRow);
         
         Console.WriteLine($"✓ Added row to cloned table");
-        Console.WriteLine($"  Original: {originalTable.Rows.Count} rows, Cloned: {clonedTable.Rows.Count} rows");
+        Console.WriteLine($"  Original: {originalTable.Rows.Count} row(s), Cloned: {clonedTable.Rows.Count} row(s)");
         Console.WriteLine($"✓ Tables are independent");
         Console.WriteLine();
 
@@ -140,7 +160,7 @@ class Program
         Console.WriteLine("--- Requirement 6: Change Reactions and Logging (Observer Pattern) ---");
         
         var publisher = new DataChangePublisher();
-        var logger = new Logger();
+        var logger = new LogObserver();
         publisher.Attach(logger);
         
         publisher.PublishChange("Test: User inserted");

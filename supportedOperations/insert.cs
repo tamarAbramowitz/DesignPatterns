@@ -1,3 +1,6 @@
+using System;
+using System.Linq;
+
 public class Insert : Operation
 {
     private string _tableName;
@@ -32,8 +35,6 @@ public class Insert : Operation
                 throw new Exception($"Column {kvp.Key} does not exist in table");
             }
         }
-        
-    
     }
 
     protected override List<Row> Execution()
@@ -43,6 +44,5 @@ public class Insert : Operation
         DataChangePublisher publisher = new DataChangePublisher();
         publisher.PublishChange($"Inserted row into table: {_tableName} with values: {string.Join(", ", _row.Values)}");
         return new List<Row> { _row };
-
     }
 }

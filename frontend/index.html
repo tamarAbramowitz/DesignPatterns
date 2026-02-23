@@ -46,6 +46,7 @@
             <button class="tab" onclick="showTab('query')">🔍 Query</button>
             <button class="tab" onclick="showTab('view')">📊 View Tables</button>
             <button class="tab" onclick="showTab('clone')">📋 Clone Table</button>
+            <button class="tab" onclick="showTab('delete')">🗑️ Delete Table</button>
         </div>
 
         <div id="message"></div>
@@ -131,6 +132,17 @@
             </div>
             <button class="btn btn-primary" onclick="cloneTable()">Clone Table</button>
         </div>
+
+        <div id="delete" class="content">
+            <h2>Delete Table</h2>
+            <div class="form-group">
+                <label>Select Table to Delete:</label>
+                <select id="deleteTable">
+                    <option value="">-- Select Table --</option>
+                </select>
+            </div>
+            <button class="btn btn-danger" onclick="deleteTable()">Delete Table</button>
+        </div>
     </div>
 
     <script>
@@ -186,7 +198,7 @@
         }
 
         function updateSelects() {
-            const selects = ['insertTable', 'queryTable', 'cloneTable'];
+            const selects = ['insertTable', 'queryTable', 'cloneTable', 'deleteTable'];
             selects.forEach(id => {
                 const select = document.getElementById(id);
                 select.innerHTML = '<option value="">-- Select Table --</option>' + 
@@ -210,11 +222,32 @@
             
             const table = tables[tableIndex];
             const row = {};
-            table.columns.forEach(c => {
-                row[c.name] = document.getElementById(`field_${c.name}`).value;
-            });
+            
+            // Validation: Check all fields have values
+            for (let c of table.columns) {
+                const value = document.getElementById(`field_${c.name}`).value;
+                if (!value || value.trim() === '') {
+                    return showMessage(`Missing value for column: ${c.name}`, 'error');
+                }
+                
+                // Validation: Check data types
+                if (c.type === 'Integer') {
+                    if (isNaN(value) || !Number.isInteger(Number(value))) {
+                        return showMessage(`Column ${c.name} must be an integer`, 'error');
+                    }
+                    row[c.name] = parseInt(value);
+                } else if (c.type === 'Boolean') {
+                    if (value !== 'true' && value !== 'false') {
+                        return showMessage(`Column ${c.name} must be true or false`, 'error');
+                    }
+                    row[c.name] = value === 'true';
+                } else {
+                    row[c.name] = value;
+                }
+            }
+            
             table.rows.push(row);
-            showMessage('Row inserted!', 'success');
+            showMessage('Row inserted successfully!', 'success');
             showInsertFields();
         }
 
@@ -281,6 +314,18 @@
             tables.push(cloned);
             showMessage(`Table '${original.name}' cloned!`, 'success');
             updateSelects();
+        }
+
+        function deleteTable() {
+            const tableIndex = document.getElementById('deleteTable').value;
+            if (!tableIndex) return showMessage('Select a table', 'error');
+            
+            const tableName = tables[tableIndex].name;
+            if (confirm(`Are you sure you want to delete table '${tableName}'?`)) {
+                tables.splice(tableIndex, 1);
+                showMessage(`Table '${tableName}' deleted!`, 'success');
+                updateSelects();
+            }
         }
     </script>
 </body>

@@ -31,14 +31,6 @@
         .alert-success { background: #d4edda; color: #155724; }
         .alert-error { background: #f8d7da; color: #721c24; }
         .column-item { display: flex; gap: 10px; margin-bottom: 10px; }
-        #logConsole { background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 14px; max-height: 300px; overflow-y: auto; margin: 20px; }
-        .log-entry { margin: 5px 0; }
-        .log-time { color: #888; }
-        .log-action { color: #00ff00; font-weight: bold; }
-        .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .log-toggle { background: #00ff00; color: #1e1e1e; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; font-weight: bold; }
-        .log-toggle:hover { background: #00cc00; }
-        #logEntries.collapsed { display: none; }
     </style>
 </head>
 <body>
@@ -50,24 +42,17 @@
 
         <div class="tabs">
             <button class="tab active" onclick="showTab('create')">➕ Create Table</button>
+            <button class="tab" onclick="showTab('addColumn')">➕ Add Column</button>
             <button class="tab" onclick="showTab('insert')">📝 Insert Row</button>
             <button class="tab" onclick="showTab('update')">✏️ Update Row</button>
             <button class="tab" onclick="showTab('query')">🔍 Query</button>
             <button class="tab" onclick="showTab('view')">📊 View Tables</button>
+            <button class="tab" onclick="showTab('operations')">⚙️ Operations Log</button>
             <button class="tab" onclick="showTab('clone')">📋 Clone Table</button>
             <button class="tab" onclick="showTab('delete')">🗑️ Delete Table</button>
         </div>
 
         <div id="message"></div>
-
-        <!-- Observer Pattern - Log Console -->
-        <div id="logConsole">
-            <div class="log-header">
-                <strong>📋 Change Log (Observer Pattern)</strong>
-                <button class="log-toggle" onclick="toggleLog()">Hide</button>
-            </div>
-            <div id="logEntries"></div>
-        </div>
 
         <div id="create" class="content active">
             <h2>Create New Table</h2>
@@ -90,6 +75,29 @@
             <button class="btn btn-success" onclick="addColumn()">Add Column</button>
             <div id="columnsList"></div>
             <button class="btn btn-primary" onclick="createTable()">Create Table</button>
+        </div>
+
+        <div id="addColumn" class="content">
+            <h2>Add Column to Existing Table</h2>
+            <div class="form-group">
+                <label>Select Table:</label>
+                <select id="addColTable">
+                    <option value="">-- Select Table --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>New Column Name:</label>
+                <input type="text" id="newColName" placeholder="Column name">
+            </div>
+            <div class="form-group">
+                <label>Column Type:</label>
+                <select id="newColType">
+                    <option value="String">String</option>
+                    <option value="Integer">Integer</option>
+                    <option value="Boolean">Boolean</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="addColumnToTable()">Add Column</button>
         </div>
 
         <div id="insert" class="content">
@@ -187,6 +195,25 @@
             <div id="allTables"></div>
         </div>
 
+        <div id="operations" class="content">
+            <h2>Supported Operations (Command Pattern)</h2>
+            <div style="background: #f5f5f5; padding: 20px; border-radius: 5px;">
+                <h3>📋 Available Operations:</h3>
+                <ul style="line-height: 2;">
+                    <li><strong>CREATE</strong> - Create new table with schema (Builder Pattern)</li>
+                    <li><strong>INSERT</strong> - Insert row with validation (Command + Template Method)</li>
+                    <li><strong>UPDATE</strong> - Update existing rows (Command + Template Method)</li>
+                    <li><strong>DELETE</strong> - Delete rows by index (Command + Template Method)</li>
+                    <li><strong>QUERY</strong> - Query with conditions (Interpreter Pattern)</li>
+                    <li><strong>REMOVE</strong> - Remove entire table (Command Pattern)</li>
+                    <li><strong>CLONE</strong> - Deep copy table (Prototype Pattern)</li>
+                </ul>
+                <h3>🔔 Observer Pattern:</h3>
+                <p>All operations trigger change notifications logged in the console above.</p>
+                <div id="operationsHistory" style="background: white; padding: 15px; margin-top: 10px; border-radius: 5px; max-height: 400px; overflow-y: auto;"></div>
+            </div>
+        </div>
+
         <div id="clone" class="content">
             <h2>Clone Table</h2>
             <div class="form-group">
@@ -213,7 +240,7 @@
     <script>
         let tables = [];
         let tempColumns = [];
-        let logVisible = true;
+        let operationsHistory = [];
 
         // Load data from localStorage on page load
         window.addEventListener('DOMContentLoaded', function() {
@@ -223,20 +250,12 @@
                 updateSelects();
                 showMessage('Previous data loaded successfully!', 'success');
             }
-        });
-
-        function toggleLog() {
-            logVisible = !logVisible;
-            const entries = document.getElementById('logEntries');
-            const btn = document.querySelector('.log-toggle');
-            if (logVisible) {
-                entries.classList.remove('collapsed');
-                btn.textContent = 'Hide';
-            } else {
-                entries.classList.add('collapsed');
-                btn.textContent = 'Show';
+            const savedOps = localStorage.getItem('operationsHistory');
+            if (savedOps) {
+                operationsHistory = JSON.parse(savedOps);
+                updateOperationsHistory();
             }
-        }
+        });
 
         // Save data to localStorage
         function saveToLocalStorage() {
@@ -246,10 +265,26 @@
         // Observer Pattern - Log changes
         function logChange(action, details) {
             const timestamp = new Date().toLocaleTimeString();
-            const logEntry = `<div class="log-entry"><span class="log-time">[${timestamp}]</span> <span class="log-action">${action}:</span> ${details}</div>`;
-            const logEntries = document.getElementById('logEntries');
-            logEntries.innerHTML = logEntry + logEntries.innerHTML;
+            
+            // Add to operations history
+            operationsHistory.unshift({timestamp, action, details});
+            localStorage.setItem('operationsHistory', JSON.stringify(operationsHistory));
+            updateOperationsHistory();
+            
             console.log(`[${timestamp}] ${action}: ${details}`);
+        }
+
+        function updateOperationsHistory() {
+            const div = document.getElementById('operationsHistory');
+            if (operationsHistory.length === 0) {
+                div.innerHTML = '<p>No operations performed yet.</p>';
+                return;
+            }
+            div.innerHTML = '<h4>Recent Operations:</h4>' + operationsHistory.map(op => 
+                `<div style="padding: 10px; border-bottom: 1px solid #ddd;">
+                    <strong>[${op.timestamp}]</strong> <span style="color: #667eea;">${op.action}</span>: ${op.details}
+                </div>`
+            ).join('');
         }
 
         function showTab(tabName) {
@@ -294,7 +329,7 @@
             
             tables.push({name, columns: [...tempColumns], rows: []});
             saveToLocalStorage();
-            logChange('CREATE TABLE', `Table '${name}' created with ${tempColumns.length} columns`);
+            logChange('CREATE', `Table '${name}' created with ${tempColumns.length} columns: ${tempColumns.map(c => c.name).join(', ')}`);
             showMessage(`Table '${name}' created!`, 'success');
             document.getElementById('tableName').value = '';
             tempColumns = [];
@@ -302,8 +337,37 @@
             updateSelects();
         }
 
+        function addColumnToTable() {
+            const tableIndex = document.getElementById('addColTable').value;
+            const colName = document.getElementById('newColName').value;
+            const colType = document.getElementById('newColType').value;
+            
+            if (!tableIndex) return showMessage('Select a table', 'error');
+            if (!colName) return showMessage('Enter column name', 'error');
+            
+            const table = tables[tableIndex];
+            
+            // Check if column already exists
+            if (table.columns.find(c => c.name === colName)) {
+                return showMessage('Column already exists', 'error');
+            }
+            
+            // Add column to schema
+            table.columns.push({name: colName, type: colType});
+            
+            // Add default value to all existing rows
+            const defaultValue = colType === 'Integer' ? 0 : colType === 'Boolean' ? false : '';
+            table.rows.forEach(row => row[colName] = defaultValue);
+            
+            saveToLocalStorage();
+            logChange('ADD COLUMN', `Column '${colName}' (${colType}) added to table '${table.name}'`);
+            showMessage(`Column '${colName}' added!`, 'success');
+            document.getElementById('newColName').value = '';
+            updateSelects();
+        }
+
         function updateSelects() {
-            const selects = ['insertTable', 'updateTable', 'queryTable', 'cloneTable', 'deleteTable'];
+            const selects = ['insertTable', 'updateTable', 'queryTable', 'cloneTable', 'deleteTable', 'addColTable'];
             selects.forEach(id => {
                 const select = document.getElementById(id);
                 select.innerHTML = '<option value="">-- Select Table --</option>' + 
@@ -353,7 +417,7 @@
             
             table.rows.push(row);
             saveToLocalStorage();
-            logChange('INSERT ROW', `Row inserted into table '${table.name}'`);
+            logChange('INSERT', `Row inserted into table '${table.name}' with values: ${JSON.stringify(row)}`);
             showMessage('Row inserted successfully!', 'success');
             showInsertFields();
         }
@@ -410,7 +474,7 @@
             
             table.rows[rowIndex] = row;
             saveToLocalStorage();
-            logChange('UPDATE ROW', `Row ${rowIndex} updated in table '${table.name}'`);
+            logChange('UPDATE', `Row ${rowIndex} updated in table '${table.name}' with values: ${JSON.stringify(row)}`);
             showMessage('Row updated successfully!', 'success');
         }
 
@@ -477,7 +541,7 @@
                 results.map(r => '<tr>' + table.columns.map(c => `<td>${r[c.name]}</td>`).join('') + '</tr>').join('') +
                 '</tbody></table>';
             document.getElementById('queryResults').innerHTML = html;
-            logChange('QUERY', `Queried table '${table.name}' with ${queryDesc || 'no conditions'} - found ${results.length} rows`);
+            logChange('QUERY', `Table '${table.name}' queried with: ${queryDesc || 'no conditions'} - found ${results.length} rows`);
         }
 
         function showAllTables() {
@@ -499,7 +563,7 @@
             const tableName = tables[tableIndex].name;
             tables[tableIndex].rows.splice(rowIndex, 1);
             saveToLocalStorage();
-            logChange('DELETE ROW', `Row deleted from table '${tableName}' at index ${rowIndex}`);
+            logChange('DELETE', `Row deleted from table '${tableName}' at index ${rowIndex}`);
             showMessage('Row deleted!', 'success');
             showAllTables();
         }
@@ -516,7 +580,7 @@
             };
             tables.push(cloned);
             saveToLocalStorage();
-            logChange('CLONE TABLE', `Table '${original.name}' cloned to '${cloned.name}'`);
+            logChange('CLONE', `Table '${original.name}' cloned to '${cloned.name}' (Prototype Pattern)`);
             showMessage(`Table '${original.name}' cloned!`, 'success');
             updateSelects();
         }
@@ -529,7 +593,7 @@
             if (confirm(`Are you sure you want to delete table '${tableName}'?`)) {
                 tables.splice(tableIndex, 1);
                 saveToLocalStorage();
-                logChange('DELETE TABLE', `Table '${tableName}' deleted`);
+                logChange('REMOVE', `Table '${tableName}' removed from database`);
                 showMessage(`Table '${tableName}' deleted!`, 'success');
                 updateSelects();
             }

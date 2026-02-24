@@ -17,7 +17,6 @@ public class DatabaseAPI
         Table table = CreateTableInstance(tableName, schema);
         RegisterTableToDatabase(table);
     }
-
     public void Insert(string tableName, Dictionary<string, object> values)
     {
         Table table = GetTableSafely(tableName);

@@ -34,6 +34,38 @@ public class Insert : Operation
             {
                 throw new Exception($"Column {kvp.Key} does not exist in table");
             }
+
+            // Validate value is not null or empty
+            if (kvp.Value == null || (kvp.Value is string str && string.IsNullOrWhiteSpace(str)))
+            {
+                throw new Exception($"Value for column {kvp.Key} cannot be null or empty");
+            }
+
+            // Validate data type
+            var expectedType = column.Type;
+            var actualValue = kvp.Value;
+
+            if (expectedType == DataType.Integer)
+            {
+                if (!(actualValue is int))
+                {
+                    throw new Exception($"Column {kvp.Key} expects Integer type");
+                }
+            }
+            else if (expectedType == DataType.String)
+            {
+                if (!(actualValue is string))
+                {
+                    throw new Exception($"Column {kvp.Key} expects String type");
+                }
+            }
+            else if (expectedType == DataType.Boolean)
+            {
+                if (!(actualValue is bool))
+                {
+                    throw new Exception($"Column {kvp.Key} expects Boolean type");
+                }
+            }
         }
     }
 

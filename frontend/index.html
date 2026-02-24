@@ -31,6 +31,14 @@
         .alert-success { background: #d4edda; color: #155724; }
         .alert-error { background: #f8d7da; color: #721c24; }
         .column-item { display: flex; gap: 10px; margin-bottom: 10px; }
+        #logConsole { background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 14px; max-height: 300px; overflow-y: auto; margin: 20px; }
+        .log-entry { margin: 5px 0; }
+        .log-time { color: #888; }
+        .log-action { color: #00ff00; font-weight: bold; }
+        .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .log-toggle { background: #00ff00; color: #1e1e1e; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; font-weight: bold; }
+        .log-toggle:hover { background: #00cc00; }
+        #logEntries.collapsed { display: none; }
     </style>
 </head>
 <body>
@@ -43,6 +51,7 @@
         <div class="tabs">
             <button class="tab active" onclick="showTab('create')">➕ Create Table</button>
             <button class="tab" onclick="showTab('insert')">📝 Insert Row</button>
+            <button class="tab" onclick="showTab('update')">✏️ Update Row</button>
             <button class="tab" onclick="showTab('query')">🔍 Query</button>
             <button class="tab" onclick="showTab('view')">📊 View Tables</button>
             <button class="tab" onclick="showTab('clone')">📋 Clone Table</button>
@@ -50,6 +59,15 @@
         </div>
 
         <div id="message"></div>
+
+        <!-- Observer Pattern - Log Console -->
+        <div id="logConsole">
+            <div class="log-header">
+                <strong>📋 Change Log (Observer Pattern)</strong>
+                <button class="log-toggle" onclick="toggleLog()">Hide</button>
+            </div>
+            <div id="logEntries"></div>
+        </div>
 
         <div id="create" class="content active">
             <h2>Create New Table</h2>
@@ -86,14 +104,33 @@
             <button class="btn btn-primary" onclick="insertRow()">Insert Row</button>
         </div>
 
+        <div id="update" class="content">
+            <h2>Update Row</h2>
+            <div class="form-group">
+                <label>Select Table:</label>
+                <select id="updateTable" onchange="showUpdateRows()">
+                    <option value="">-- Select Table --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Select Row:</label>
+                <select id="updateRowIndex" onchange="showUpdateFields()">
+                    <option value="">-- Select Row --</option>
+                </select>
+            </div>
+            <div id="updateFields"></div>
+            <button class="btn btn-primary" onclick="updateRow()">Update Row</button>
+        </div>
+
         <div id="query" class="content">
             <h2>Query Data</h2>
             <div class="form-group">
                 <label>Select Table:</label>
-                <select id="queryTable">
+                <select id="queryTable" onchange="updateQueryColumns()">
                     <option value="">-- Select Table --</option>
                 </select>
             </div>
+            <h3>Condition 1:</h3>
             <div class="form-group">
                 <label>Column:</label>
                 <select id="queryColumn">
@@ -112,6 +149,34 @@
             <div class="form-group">
                 <label>Value:</label>
                 <input type="text" id="queryValue" placeholder="Enter value">
+            </div>
+            <div class="form-group">
+                <label>Combine with:</label>
+                <select id="queryCombine">
+                    <option value="none">None (Single Condition)</option>
+                    <option value="AND">AND</option>
+                    <option value="OR">OR</option>
+                </select>
+            </div>
+            <div id="condition2" style="display:none;">
+                <h3>Condition 2:</h3>
+                <div class="form-group">
+                    <label>Column:</label>
+                    <select id="queryColumn2"></select>
+                </div>
+                <div class="form-group">
+                    <label>Operator:</label>
+                    <select id="queryOp2">
+                        <option value="Equal">Equal (=)</option>
+                        <option value="NotEqual">Not Equal (!=)</option>
+                        <option value="Greater">Greater Than (>)</option>
+                        <option value="Less">Less Than (<)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Value:</label>
+                    <input type="text" id="queryValue2" placeholder="Enter value">
+                </div>
             </div>
             <button class="btn btn-primary" onclick="queryData()">Query</button>
             <div id="queryResults"></div>
@@ -148,6 +213,44 @@
     <script>
         let tables = [];
         let tempColumns = [];
+        let logVisible = true;
+
+        // Load data from localStorage on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedTables = localStorage.getItem('databaseTables');
+            if (savedTables) {
+                tables = JSON.parse(savedTables);
+                updateSelects();
+                showMessage('Previous data loaded successfully!', 'success');
+            }
+        });
+
+        function toggleLog() {
+            logVisible = !logVisible;
+            const entries = document.getElementById('logEntries');
+            const btn = document.querySelector('.log-toggle');
+            if (logVisible) {
+                entries.classList.remove('collapsed');
+                btn.textContent = 'Hide';
+            } else {
+                entries.classList.add('collapsed');
+                btn.textContent = 'Show';
+            }
+        }
+
+        // Save data to localStorage
+        function saveToLocalStorage() {
+            localStorage.setItem('databaseTables', JSON.stringify(tables));
+        }
+
+        // Observer Pattern - Log changes
+        function logChange(action, details) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `<div class="log-entry"><span class="log-time">[${timestamp}]</span> <span class="log-action">${action}:</span> ${details}</div>`;
+            const logEntries = document.getElementById('logEntries');
+            logEntries.innerHTML = logEntry + logEntries.innerHTML;
+            console.log(`[${timestamp}] ${action}: ${details}`);
+        }
 
         function showTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -190,6 +293,8 @@
             if (!name || tempColumns.length === 0) return showMessage('Enter table name and add columns', 'error');
             
             tables.push({name, columns: [...tempColumns], rows: []});
+            saveToLocalStorage();
+            logChange('CREATE TABLE', `Table '${name}' created with ${tempColumns.length} columns`);
             showMessage(`Table '${name}' created!`, 'success');
             document.getElementById('tableName').value = '';
             tempColumns = [];
@@ -198,7 +303,7 @@
         }
 
         function updateSelects() {
-            const selects = ['insertTable', 'queryTable', 'cloneTable', 'deleteTable'];
+            const selects = ['insertTable', 'updateTable', 'queryTable', 'cloneTable', 'deleteTable'];
             selects.forEach(id => {
                 const select = document.getElementById(id);
                 select.innerHTML = '<option value="">-- Select Table --</option>' + 
@@ -247,8 +352,89 @@
             }
             
             table.rows.push(row);
+            saveToLocalStorage();
+            logChange('INSERT ROW', `Row inserted into table '${table.name}'`);
             showMessage('Row inserted successfully!', 'success');
             showInsertFields();
+        }
+
+        function showUpdateRows() {
+            const tableIndex = document.getElementById('updateTable').value;
+            if (!tableIndex) return;
+            const table = tables[tableIndex];
+            const select = document.getElementById('updateRowIndex');
+            select.innerHTML = '<option value="">-- Select Row --</option>' + 
+                table.rows.map((r, i) => `<option value="${i}">Row ${i}: ${JSON.stringify(r)}</option>`).join('');
+        }
+
+        function showUpdateFields() {
+            const tableIndex = document.getElementById('updateTable').value;
+            const rowIndex = document.getElementById('updateRowIndex').value;
+            if (!tableIndex || !rowIndex) return;
+            
+            const table = tables[tableIndex];
+            const row = table.rows[rowIndex];
+            document.getElementById('updateFields').innerHTML = table.columns.map(c => 
+                `<div class="form-group"><label>${c.name} (${c.type}):</label><input type="text" id="update_${c.name}" value="${row[c.name]}"></div>`
+            ).join('');
+        }
+
+        function updateRow() {
+            const tableIndex = document.getElementById('updateTable').value;
+            const rowIndex = document.getElementById('updateRowIndex').value;
+            if (!tableIndex || !rowIndex) return showMessage('Select table and row', 'error');
+            
+            const table = tables[tableIndex];
+            const row = {};
+            
+            for (let c of table.columns) {
+                const value = document.getElementById(`update_${c.name}`).value;
+                if (!value || value.trim() === '') {
+                    return showMessage(`Missing value for column: ${c.name}`, 'error');
+                }
+                
+                if (c.type === 'Integer') {
+                    if (isNaN(value) || !Number.isInteger(Number(value))) {
+                        return showMessage(`Column ${c.name} must be an integer`, 'error');
+                    }
+                    row[c.name] = parseInt(value);
+                } else if (c.type === 'Boolean') {
+                    if (value !== 'true' && value !== 'false') {
+                        return showMessage(`Column ${c.name} must be true or false`, 'error');
+                    }
+                    row[c.name] = value === 'true';
+                } else {
+                    row[c.name] = value;
+                }
+            }
+            
+            table.rows[rowIndex] = row;
+            saveToLocalStorage();
+            logChange('UPDATE ROW', `Row ${rowIndex} updated in table '${table.name}'`);
+            showMessage('Row updated successfully!', 'success');
+        }
+
+        function updateQueryColumns() {
+            const tableIndex = document.getElementById('queryTable').value;
+            if (!tableIndex) return;
+            const table = tables[tableIndex];
+            const options = table.columns.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            document.getElementById('queryColumn').innerHTML = '<option value="">-- All Rows --</option>' + options;
+            document.getElementById('queryColumn2').innerHTML = options;
+        }
+
+        document.getElementById('queryCombine').addEventListener('change', function() {
+            document.getElementById('condition2').style.display = this.value !== 'none' ? 'block' : 'none';
+        });
+
+        function evaluateCondition(row, column, op, value) {
+            const rowVal = row[column];
+            switch(op) {
+                case 'Equal': return rowVal == value;
+                case 'NotEqual': return rowVal != value;
+                case 'Greater': return Number(rowVal) > Number(value);
+                case 'Less': return Number(rowVal) < Number(value);
+            }
         }
 
         function queryData() {
@@ -259,25 +445,39 @@
             const column = document.getElementById('queryColumn').value;
             const op = document.getElementById('queryOp').value;
             const value = document.getElementById('queryValue').value;
+            const combine = document.getElementById('queryCombine').value;
             
             let results = table.rows;
+            let queryDesc = '';
+            
             if (column && value) {
-                results = results.filter(row => {
-                    const rowVal = row[column];
-                    switch(op) {
-                        case 'Equal': return rowVal == value;
-                        case 'NotEqual': return rowVal != value;
-                        case 'Greater': return Number(rowVal) > Number(value);
-                        case 'Less': return Number(rowVal) < Number(value);
-                    }
-                });
+                if (combine === 'none') {
+                    results = results.filter(row => evaluateCondition(row, column, op, value));
+                    queryDesc = `${column} ${op} ${value}`;
+                } else {
+                    const column2 = document.getElementById('queryColumn2').value;
+                    const op2 = document.getElementById('queryOp2').value;
+                    const value2 = document.getElementById('queryValue2').value;
+                    
+                    if (!column2 || !value2) return showMessage('Fill second condition', 'error');
+                    
+                    results = results.filter(row => {
+                        const cond1 = evaluateCondition(row, column, op, value);
+                        const cond2 = evaluateCondition(row, column2, op2, value2);
+                        return combine === 'AND' ? (cond1 && cond2) : (cond1 || cond2);
+                    });
+                    queryDesc = `(${column} ${op} ${value}) ${combine} (${column2} ${op2} ${value2})`;
+                }
             }
             
-            const html = `<h3>Results (${results.length} rows)</h3><table><thead><tr>` +
+            const html = `<h3>Results (${results.length} rows)</h3>` +
+                (queryDesc ? `<p><strong>Query:</strong> ${queryDesc}</p>` : '') +
+                `<table><thead><tr>` +
                 table.columns.map(c => `<th>${c.name}</th>`).join('') + '</tr></thead><tbody>' +
                 results.map(r => '<tr>' + table.columns.map(c => `<td>${r[c.name]}</td>`).join('') + '</tr>').join('') +
                 '</tbody></table>';
             document.getElementById('queryResults').innerHTML = html;
+            logChange('QUERY', `Queried table '${table.name}' with ${queryDesc || 'no conditions'} - found ${results.length} rows`);
         }
 
         function showAllTables() {
@@ -296,7 +496,10 @@
         }
 
         function deleteRow(tableIndex, rowIndex) {
+            const tableName = tables[tableIndex].name;
             tables[tableIndex].rows.splice(rowIndex, 1);
+            saveToLocalStorage();
+            logChange('DELETE ROW', `Row deleted from table '${tableName}' at index ${rowIndex}`);
             showMessage('Row deleted!', 'success');
             showAllTables();
         }
@@ -312,6 +515,8 @@
                 rows: original.rows.map(r => ({...r}))
             };
             tables.push(cloned);
+            saveToLocalStorage();
+            logChange('CLONE TABLE', `Table '${original.name}' cloned to '${cloned.name}'`);
             showMessage(`Table '${original.name}' cloned!`, 'success');
             updateSelects();
         }
@@ -323,6 +528,8 @@
             const tableName = tables[tableIndex].name;
             if (confirm(`Are you sure you want to delete table '${tableName}'?`)) {
                 tables.splice(tableIndex, 1);
+                saveToLocalStorage();
+                logChange('DELETE TABLE', `Table '${tableName}' deleted`);
                 showMessage(`Table '${tableName}' deleted!`, 'success');
                 updateSelects();
             }

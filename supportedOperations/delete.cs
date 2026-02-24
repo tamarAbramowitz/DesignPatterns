@@ -18,15 +18,26 @@ public class Delete : Operation
             throw new Exception("Table does not exist");
         }
 
+        if (_indexes == null || _indexes.Count == 0)
+        {
+            throw new Exception("No indexes provided for deletion");
+        }
+
         Table table = tables[_tableName]; 
 
         foreach (var index in _indexes)
         {
             if (index < 0 || index >= table.Rows.Count)
             {
-                throw new Exception("Index out of range");
+                throw new Exception($"Index {index} is out of range");
             }
-        }  
+        }
+
+        // Check for duplicate indexes
+        if (_indexes.Count != _indexes.Distinct().Count())
+        {
+            throw new Exception("Duplicate indexes provided");
+        }
     }
 
     protected override List<Row> Execution()

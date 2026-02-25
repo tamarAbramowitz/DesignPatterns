@@ -76,7 +76,7 @@ public class DatabaseAPI
         table.AddRow(row);
     }
 
-    private List<Row> FilterRows(Table table, IExpression condition)
+    public List<Row> FilterRows(Table table, IExpression condition)
     {
         if (condition == null)
             return table.Rows.ToList();

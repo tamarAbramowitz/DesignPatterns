@@ -1,43 +1,45 @@
 public class Create : Operation
 {
-    private List<Table> _tables;
+    private Dictionary<string, (string columnName, DataType dataType)[]> _tables;
+    private DatabaseAPI _databaseAPI;
 
-    public Create(Database database, List<Table> tables) : base(database)
+    public Create(Database database, Dictionary<string, (string, DataType)[]> tables, DatabaseAPI databaseAPI) 
+        : base(database)
     {
-        _tables = tables;    
+        _tables = tables;
+        _databaseAPI = databaseAPI;
     }
 
     protected override void Validation()
     {
         var tables = _database.GetAllTables();
 
-        if (_tables == null || _tables.Count == 0)
-        {
-            throw new Exception("No tables provided to create");
-        }
-
         foreach (var table in _tables)
         {
-            if (string.IsNullOrWhiteSpace(table.Name))
+            if (string.IsNullOrWhiteSpace(table.Key))
             {
                 throw new Exception("Table name cannot be empty");
             }
 
-            if (tables.ContainsKey(table.Name))
+            if (tables.ContainsKey(table.Key))
             {
-                throw new Exception($"Table '{table.Name}' already exists");
+                throw new Exception($"Table '{table.Key}' already exists");
             }
 
-            if (table.Schema == null || table.Schema.Columns.Count == 0)
+            if (table.Value == null || table.Value.Length == 0)
             {
-                throw new Exception($"Table '{table.Name}' must have at least one column");
+                throw new Exception($"Table '{table.Key}' must have at least one column");
             }
 
-            // Validate column names are unique
-            var columnNames = table.Schema.Columns.Select(c => c.Name).ToList();
+            if (table.Value.Any(c => string.IsNullOrWhiteSpace(c.columnName)))
+            {
+                throw new Exception($"Table '{table.Key}' has column with empty name");
+            }
+
+            var columnNames = table.Value.Select(c => c.columnName).ToList();
             if (columnNames.Count != columnNames.Distinct().Count())
             {
-                throw new Exception($"Table '{table.Name}' has duplicate column names");
+                throw new Exception($"Table '{table.Key}' has duplicate column names");
             }
         }
     }
@@ -46,11 +48,12 @@ public class Create : Operation
     {
         foreach (var table in _tables)
         {
-            _database.RegisterTable(table);
+            _databaseAPI.CreateTable(
+                table.Key,
+                table.Value
+            );
         }
-        DataChangePublisher publisher = new DataChangePublisher();
-        publisher.PublishChange($"Created tables: {string.Join(", ", _tables.Select(t => t.Name))}");
-
+        
         return new List<Row>();
     }
 }

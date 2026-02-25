@@ -35,13 +35,11 @@ public class Insert : Operation
                 throw new Exception($"Column {kvp.Key} does not exist in table");
             }
 
-            // Validate value is not null or empty
             if (kvp.Value == null || (kvp.Value is string str && string.IsNullOrWhiteSpace(str)))
             {
                 throw new Exception($"Value for column {kvp.Key} cannot be null or empty");
             }
 
-            // Validate data type
             var expectedType = column.Type;
             var actualValue = kvp.Value;
 

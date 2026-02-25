@@ -7,7 +7,7 @@ public class Remove : Operation
         _tablesNames = tableNames;    
     }
 
-
+     
 
     protected override void Validation()
     {

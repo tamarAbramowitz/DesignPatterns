@@ -20,7 +20,6 @@ public class Database
 
         if (_tables.ContainsKey(table.Name))
             throw new InvalidOperationException($"Table '{table.Name}' already exists.");
-
         _tables.Add(table.Name, table);
     }
 

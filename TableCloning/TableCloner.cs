@@ -12,7 +12,8 @@ public static class TableCloner
             Row clonedRow = CloneRow(row);
             clonedTable.AddRow(clonedRow);
         }
-        
+        //DataChangePublisher publisher = new DataChangePublisher();
+        //publisher.PublishChange($"table cloned : {original.Name}");
         return clonedTable;
     }
 

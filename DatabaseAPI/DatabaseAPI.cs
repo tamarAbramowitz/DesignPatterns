@@ -20,7 +20,6 @@ public class DatabaseAPI
         publisher.PublishChange($"Created table: {table.Name}");
 
     }
-
     public void Insert(string tableName, Dictionary<string, object> values)
     {
         Table table = GetTableSafely(tableName);

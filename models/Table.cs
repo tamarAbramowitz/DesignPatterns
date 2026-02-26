@@ -2,7 +2,7 @@
 
     public class Table
     {
-        public string Name { get; set; }
+        public string Name { get; private set; }
         public Schema Schema { get; private set; }
         public List<Row> Rows { get; private set; }
 

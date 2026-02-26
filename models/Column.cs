@@ -3,8 +3,8 @@
 
     public class Column
     {
-        public string Name { get; set; }
-        public DataType Type { get; set; }
+        public string Name { get; private set; }
+        public DataType Type { get; private set; }
 
         public Column(string name, DataType type)
         {

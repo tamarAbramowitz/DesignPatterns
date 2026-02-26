@@ -84,8 +84,7 @@ public class Update : Operation
             x++;
             
         }
-        DataChangePublisher publisher = new DataChangePublisher();
-        publisher.PublishChange($"Updated rows in indexes: {string.Join(", ", _indexes)} in table: {_tableName} with values: {string.Join(", ", _updatedRows.Select(r => string.Join(", ", r.Values)))}");
+        DataChangePublisher.Instance.PublishChange($"Updated rows in indexes: {string.Join(", ", _indexes)} in table: {_tableName} with values: {string.Join(", ", _updatedRows.Select(r => string.Join(", ", r.Values)))}");
         return _updatedRows;
     }
 }

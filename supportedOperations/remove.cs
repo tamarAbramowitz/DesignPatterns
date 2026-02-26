@@ -29,8 +29,7 @@ public class Remove : Operation
         {
             _database.RemoveTable(tableName);
         }
-        DataChangePublisher publisher = new DataChangePublisher();
-        publisher.PublishChange($"Removed tables: {string.Join(", ", _tablesNames)}");
+        DataChangePublisher.Instance.PublishChange($"Removed tables: {string.Join(", ", _tablesNames)}");
         return new List<Row>();
     }
 }

@@ -16,8 +16,7 @@ public class DatabaseAPI
         Schema schema = BuildSchema(columns);
         Table table = CreateTableInstance(tableName, schema);
         RegisterTableToDatabase(table);
-        DataChangePublisher publisher = new DataChangePublisher();
-        publisher.PublishChange($"Created table: {table.Name}");
+        DataChangePublisher.Instance.PublishChange($"Created table: {table.Name}");
 
     }
     public void Insert(string tableName, Dictionary<string, object> values)
@@ -25,8 +24,7 @@ public class DatabaseAPI
         Table table = GetTableSafely(tableName);
         Row row = BuildRow(values);
         AddRowToTable(table, row);
-        DataChangePublisher publisher = new DataChangePublisher();
-        publisher.PublishChange($"Inserted row into table: {tableName} with values: {string.Join(", ", values)}");
+        DataChangePublisher.Instance.PublishChange($"Inserted row into table: {tableName} with values: {string.Join(", ", values)}");
     }
 
     public List<Row> Query(string tableName, IExpression condition =null)

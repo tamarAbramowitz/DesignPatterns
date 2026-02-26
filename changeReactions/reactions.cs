@@ -4,7 +4,23 @@ using System.Collections.Generic;
 
 class DataChangePublisher
 {
+    private static DataChangePublisher? _instance;
     private List<IObserver> observers = new List<IObserver>();
+
+    // Singleton Pattern
+    public static DataChangePublisher Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new DataChangePublisher();
+            }
+            return _instance;
+        }
+    }
+
+    private DataChangePublisher() { }
 
     public void Attach(IObserver observer)
     {

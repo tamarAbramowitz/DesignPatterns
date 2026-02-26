@@ -54,8 +54,7 @@ public class Delete : Operation
         {
             table.Rows.RemoveAt(index);
         }
-        DataChangePublisher publisher = new DataChangePublisher();
-        publisher.PublishChange($"Deleted rows in indexes: {string.Join(", ", _indexes)} from table: {_tableName}");
+        DataChangePublisher.Instance.PublishChange($"Deleted rows in indexes: {string.Join(", ", _indexes)} from table: {_tableName}");
         return deletedRows;
     }
 }

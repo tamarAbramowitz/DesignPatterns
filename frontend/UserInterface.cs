@@ -5,13 +5,11 @@ using System.Linq;
 class UserInterface
 {
     private DatabaseAPI db;
-    private DataChangePublisher publisher;
 
     public UserInterface()
     {
         db = new DatabaseAPI("MyDatabase");
-        publisher = new DataChangePublisher();
-        publisher.Attach(new LogObserver());
+        DataChangePublisher.Instance.Attach(new LogObserver());
     }
 
     public void Run()
@@ -105,7 +103,7 @@ class UserInterface
         if (columns.Count > 0)
         {
             db.CreateTable(tableName, columns.ToArray());
-            publisher.PublishChange($"Table '{tableName}' created with {columns.Count} columns");
+            DataChangePublisher.Instance.PublishChange($"Table '{tableName}' created with {columns.Count} columns");
             Console.WriteLine($"\n✓ Table '{tableName}' created successfully!");
         }
         else
@@ -148,7 +146,7 @@ class UserInterface
             if (values.Count > 0)
             {
                 db.Insert(tableName, values);
-                publisher.PublishChange($"Row inserted into '{tableName}'");
+                DataChangePublisher.Instance.PublishChange($"Row inserted into '{tableName}'");
                 Console.WriteLine($"\n✓ Row inserted successfully!");
             }
         }

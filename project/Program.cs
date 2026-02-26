@@ -159,13 +159,12 @@ class Program
         // Test Requirement 6: Change Reactions and Logging (Observer Pattern)
         Console.WriteLine("--- Requirement 6: Change Reactions and Logging (Observer Pattern) ---");
         
-        var publisher = new DataChangePublisher();
         var logger = new LogObserver();
-        publisher.Attach(logger);
+        DataChangePublisher.Instance.Attach(logger);
         
-        publisher.PublishChange("Test: User inserted");
-        publisher.PublishChange("Test: User updated");
-        publisher.PublishChange("Test: User deleted");
+        DataChangePublisher.Instance.PublishChange("Test: User inserted");
+        DataChangePublisher.Instance.PublishChange("Test: User updated");
+        DataChangePublisher.Instance.PublishChange("Test: User deleted");
         
         Console.WriteLine("✓ Observer pattern tested - check logs above");
         Console.WriteLine();
